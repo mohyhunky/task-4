@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Pro Recommendation System</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <!-- Google Fonts for professional look -->
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --primary: #2c3e50;
+      --secondary: #1abc9c;
+      --background: #f6f8fa;
+      --card-bg: #fff;
+      --border: #e1e4e8;
+      --radius: 12px;
+      --shadow: 0 4px 16px rgba(44, 62, 80, 0.06);
+    }
+    body {
+      font-family: 'Roboto', Arial, sans-serif;
+      background: var(--background);
+      margin: 0;
+      padding: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+    }
+    .container {
+      background: var(--card-bg);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 32px 24px;
+      max-width: 400px;
+      width: 100%;
+      border: 1px solid var(--border);
+    }
+    h2 {
+      margin-top: 0;
+      color: var(--primary);
+      font-weight: 700;
+      font-size: 2rem;
+      letter-spacing: 0.5px;
+    }
+    label {
+      font-weight: 500;
+      color: var(--primary);
+      margin-bottom: 8px;
+      display: inline-block;
+    }
+    select, button {
+      font-family: inherit;
+      font-size: 1rem;
+      padding: 10px 14px;
+      margin-top: 8px;
+      margin-bottom: 12px;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+      background: var(--background);
+      transition: border 0.2s;
+    }
+    select:focus, button:focus {
+      outline: none;
+      border-color: var(--secondary);
+    }
+    button {
+      background: var(--secondary);
+      color: #fff;
+      font-weight: 700;
+      border: none;
+      cursor: pointer;
+      box-shadow: 0 2px 6px rgba(44,62,80, 0.05);
+      transition: background 0.2s;
+    }
+    button:hover {
+      background: #16a085;
+    }
+    .card {
+      background: var(--background);
+      border-radius: 8px;
+      padding: 16px 16px;
+      margin: 12px 0;
+      box-shadow: 0 2px 6px rgba(44,62,80, 0.03);
+      border: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+    }
+    .item-title {
+      font-weight: 600;
+      color: var(--primary);
+    }
+    #recommendations {
+      margin-top: 18px;
+    }
+    .no-rec {
+      text-align: center;
+      color: #999;
+      margin-top: 22px;
+      font-size: 1.1rem;
+      font-weight: 500;
+    }
+    .profile {
+      display: flex;
+      align-items: center;
+      margin-bottom: 16px;
+    }
+    .avatar {
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      background: var(--secondary);
+      color: #fff;
+      font-size: 1.5rem;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-right: 12px;
+    }
+    @media (max-width: 550px) {
+      .container {
+        padding: 18px 5px;
+        max-width: 98vw;
+      }
+      .card { padding: 10px 8px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>Movie Recommendation</h2>
+    <div class="profile">
+      <div class="avatar" id="avatar">A</div>
+      <div>
+        <label for="user">Choose your profile:</label><br>
+        <select id="user" onchange="updateAvatar()">
+          <option value="Alice">Alice</option>
+          <option value="Bob">Bob</option>
+          <option value="Carol">Carol</option>
+          <option value="Dave">Dave</option>
+        </select>
+      </div>
+    </div>
+    <button onclick="recommend()">Get Recommendations</button>
+    <div id="recommendations"></div>
+  </div>
+
+  <script>
+    // Sample user-item ratings (collaborative filtering)
+    const users = ["Alice", "Bob", "Carol", "Dave"];
+    const avatars = {
+      Alice: "A",
+      Bob: "B",
+      Carol: "C",
+      Dave: "D"
+    };
+    // Can be expanded to books/products and genres
+    const items = [
+      { title: "Inception", genre: "Sci-Fi" },
+      { title: "Titanic", genre: "Romance" },
+      { title: "Matrix", genre: "Action" },
+      { title: "Avengers", genre: "Superhero" },
+      { title: "Interstellar", genre: "Sci-Fi" },
+      { title: "Toy Story", genre: "Animation" }
+    ];
+    // Ratings: [Inception, Titanic, Matrix, Avengers, Interstellar, Toy Story]
+    const ratings = [
+      [5, 3, 4, 4, 5, 2], // Alice
+      [4, 5, 2, 3, 4, 5], // Bob
+      [2, 1, 5, 5, 3, 4], // Carol
+      [5, 4, 3, 2, 5, 1]  // Dave
+    ];
+
+    function recommend() {
+      const userIndex = document.getElementById("user").selectedIndex;
+      const targetRatings = ratings[userIndex];
+      // Find most similar user (cosine similarity)
+      let maxSimilarity = -Infinity;
+      let similarUserIndex = -1;
+      for (let i = 0; i < users.length; i++) {
+        if (i === userIndex) continue;
+        let dot = 0, normA = 0, normB = 0;
+        for (let j = 0; j < items.length; j++) {
+          dot += targetRatings[j] * ratings[i][j];
+          normA += targetRatings[j] * targetRatings[j];
+          normB += ratings[i][j] * ratings[i][j];
+        }
+        const similarity = dot / (Math.sqrt(normA) * Math.sqrt(normB));
+        if (similarity > maxSimilarity) {
+          maxSimilarity = similarity;
+          similarUserIndex = i;
+        }
+      }
+      // Recommend items rated >=4 by similar user & <4 by target user
+      let recommendations = [];
+      for (let j = 0; j < items.length; j++) {
+        if (ratings[similarUserIndex][j] >= 4 && targetRatings[j] < 4) {
+          recommendations.push(items[j]);
+        }
+      }
+      // UI output
+      const recDiv = document.getElementById("recommendations");
+      recDiv.innerHTML = "";
+      if (recommendations.length === 0) {
+        recDiv.innerHTML = `<div class="no-rec">No new recommendations found!<br>Try another profile.</div>`;
+      } else {
+        recDiv.innerHTML = `<div><strong>We recommend for you:</strong></div>`;
+        recommendations.forEach(item => {
+          recDiv.innerHTML += `
+            <div class="card">
+              <span class="item-title">${item.title}</span>
+              <span style="margin-left:8px; color:#1abc9c; font-size:0.98em;">(${item.genre})</span>
+            </div>`;
+        });
+      }
+    }
+
+    function updateAvatar() {
+      const selectedUser = document.getElementById("user").value;
+      document.getElementById("avatar").textContent = avatars[selectedUser];
+    }
+    window.onload = updateAvatar;
+  </script>
+</body>
+</html>
